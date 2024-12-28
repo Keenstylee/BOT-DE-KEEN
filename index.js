@@ -1,13 +1,14 @@
 /**
  * Este script es responsable
  * de las funciones que
- * serán ejecutadas
+ * se ejecutarán
  * en el Lite Bot.
  *
  * Aquí es donde vas a definir
- * lo que tu bot hará.
+ * lo que tu bot
+ * hará.
  *
- * @author Dev Gui
+ * @autor Dev Gui
  */
 const path = require("node:path");
 const { menu } = require("./utils/menu");
@@ -110,7 +111,7 @@ async function runLite({ socket, data }) {
 
   if (!checkPrefix(prefix)) {
     /**
-     * ⏩ Un auto-responder simple ⏪
+     * ⏩ Un auto responder simple ⏪
      *
      * Si el mensaje incluye la palabra
      * (ignora mayúsculas y minúsculas) usa:
@@ -141,7 +142,7 @@ async function runLite({ socket, data }) {
     !(await isAdmin(userJid))
   ) {
     await ban(from, userJid);
-    await reply("¡Anti-link activado! ¡Has sido removido por enviar un link!");
+    await reply("¡Anti-link activado! Fuiste removido por enviar un enlace!");
 
     return;
   }
@@ -152,28 +153,30 @@ async function runLite({ socket, data }) {
 
   try {
     /**
-     * Aquí defines
+     * Aquí vas a definir
      * las funciones que
-     * el bot ejecutará a través de "cases".
+     * tu bot ejecutará vía "cases".
      *
      * ⚠ ATENCIÓN ⚠: No traigas funciones
      * o "cases" de
-     * otros bots a este código
+     * otros bots a este
      * sin saber lo que estás haciendo.
      *
      * Cada bot tiene sus
      * particularidades y,
-     * por lo tanto, es importante
+     * por eso, es importante
      * tener cuidado.
      * No nos hacemos responsables
-     * por problemas
-     * derivados de intentar adaptar
-     * códigos de otros bots.
+     * de los problemas
+     * que puedan surgir al
+     * traer códigos de otros
+     * bots a este,
+     * en el intento de adaptación.
      *
-     * Toda ayuda será *COBRADA*
+     * Toda ayuda será *Cobrada*
      * si tu intención
-     * es adaptar códigos
-     * de otros bots a este.
+     * es adaptar los códigos
+     * de otro bot a este.
      *
      * ✅ CASES ✅
      */
@@ -204,13 +207,13 @@ async function runLite({ socket, data }) {
 
         const antiLinkContext = antiLinkOn ? "activado" : "desactivado";
 
-        await reply(`¡Anti-link ${antiLinkContext} con éxito!`);
+        await reply(`¡Recurso de anti-link ${antiLinkContext} con éxito!`);
         break;
 
       case "attp":
         if (!args.length) {
           throw new InvalidParameterError(
-            "¡Necesitas decirme qué texto quieres convertir en sticker!"
+            "¡Necesitas proporcionar el texto que deseas convertir en sticker!"
           );
         }
 
@@ -249,13 +252,13 @@ async function runLite({ socket, data }) {
         }
 
         if (memberToRemoveJid === userJid) {
-          throw new DangerError("¡No puedes eliminarte a ti mismo!");
+          throw new DangerError("¡No puedes removerte a ti mismo!");
         }
 
         const botJid = toUserJid(BOT_NUMBER);
 
         if (memberToRemoveJid === botJid) {
-          throw new DangerError("¡No puedes eliminarme!");
+          throw new DangerError("¡No puedes removerme a mí!");
         }
 
         await ban(from, memberToRemoveJid);
@@ -317,7 +320,7 @@ async function runLite({ socket, data }) {
 
         await react("📢");
 
-        await sendText(`¡Hola, hola! Mis Cracks🐾\n ¡Marcando a todos!🤖\n\n${fullArgs}`, mentions);
+        await sendText(`¡Hola, hola! Mis Cracks🐾\n ¡Marcando a todos!🤖📢\n\n${fullArgs}`, mentions);
         break;
 
       case "menu":
@@ -339,7 +342,7 @@ async function runLite({ socket, data }) {
       errorLog(`Error al ejecutar el comando: ${error.message}`);
 
       await errorReply(
-        `¡Hubo un error al ejecutar el comando ${command.name}!
+        `¡Ocurrió un error al ejecutar el comando ${command.name}!
 
 📄 *Detalles*: ${error.message}`
       );
