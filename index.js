@@ -1,13 +1,10 @@
 /**
- * Este script é responsável
- * pelas funções que
- * serão executadas
- * no Lite Bot.
+ * Este script es responsable
+ * de las funciones que
+ * se ejecutarán en el Lite Bot.
  *
- * Aqui é onde você
- * vai definir
- * o que o seu bot
- * vai fazer.
+ * Aquí es donde defines
+ * lo que tu bot hará.
  *
  * @author Dev Gui
  */
@@ -54,6 +51,8 @@ const {
   deactivateWelcomeGroup,
   activateGroup,
   deactivateGroup,
+  getUserLives,  // Nueva función para obtener vidas
+  updateUserLives  // Nueva función para actualizar vidas
 } = require("./database/db");
 
 async function runLite({ socket, data }) {
@@ -111,31 +110,17 @@ async function runLite({ socket, data }) {
   }
 
   if (!checkPrefix(prefix)) {
-    /**
-     * ⏩ Um auto responder simples ⏪
-     *
-     * Se a mensagem incluir a palavra
-     * (ignora maiúsculas e minúsculas) use:
-     * body.toLowerCase().includes("palavra")
-     *
-     * Se a mensagem for exatamente igual a
-     * palavra (ignora maiúsculas e minúsculas) use:
-     * body.toLowerCase() === "palavra"
-     */
     if (body.toLowerCase().includes("gado")) {
-      await reply("Você é o gadão guerreiro!");
+      await reply("¡Eres el gadón guerrero!");
       return;
     }
 
     if (body === "salve") {
-      await reply("Salve, salve!");
+      await reply("¡Salve, salve!");
       return;
     }
   }
 
-  /**
-   * 🚫 Anti-link 🔗
-   */
   if (
     !checkPrefix(prefix) &&
     isActiveAntiLinkGroup(from) &&
@@ -143,8 +128,7 @@ async function runLite({ socket, data }) {
     !(await isAdmin(userJid))
   ) {
     await ban(from, userJid);
-    await reply("Anti-link ativado! Você foi removido por enviar um link!");
-
+    await reply("¡Anti-link activado! ¡Fuiste removido por enviar un link!");
     return;
   }
 
@@ -153,92 +137,19 @@ async function runLite({ socket, data }) {
   }
 
   try {
-    /**
-     * Aqui você vai definir
-     * as funções que
-     * o seu bot vai executar via "cases".
-     *
-     * ⚠ ATENÇÃO ⚠: Não traga funções
-     * ou "cases" de
-     * outros bots para cá
-     * sem saber o que está fazendo.
-     *
-     * Cada bot tem suas
-     * particularidades e,
-     * por isso, é importante
-     * tomar cuidado.
-     * Não nos responsabilizamos
-     * por problemas
-     * que possam ocorrer ao
-     * trazer códigos de outros
-     * bots pra cá,
-     * na tentativa de adaptação.
-     *
-     * Toda ajuda será *COBRADA*
-     * caso sua intenção
-     * seja adaptar os códigos
-     * de outro bot para este.
-     *
-     * ✅ CASES ✅
-     */
     switch (removeAccentsAndSpecialCharacters(command?.toLowerCase())) {
-      case "antilink":
-        if (!args.length) {
-          throw new InvalidParameterError(
-            "Você precisa digitar 1 ou 0 (ligar ou desligar)!"
-          );
-        }
-
-        const antiLinkOn = args[0] === "1";
-        const antiLinkOff = args[0] === "0";
-
-        if (!antiLinkOn && !antiLinkOff) {
-          throw new InvalidParameterError(
-            "Você precisa digitar 1 ou 0 (ligar ou desligar)!"
-          );
-        }
-
-        if (antiLinkOn) {
-          activateAntiLinkGroup(from);
-        } else {
-          deactivateAntiLinkGroup(from);
-        }
-
-        await successReact();
-
-        const antiLinkContext = antiLinkOn ? "ativado" : "desativado";
-
-        await reply(`Recurso de anti-link ${antiLinkContext} com sucesso!`);
-        break;
-
-      case "attp":
-        if (!args.length) {
-          throw new InvalidParameterError(
-            "Você precisa informar o texto que deseja transformar em figurinha."
-          );
-        }
-
-        await waitReact();
-
-        const url = await attp(args[0].trim());
-
-        await successReact();
-
-        await stickerFromURL(url);
-        break;
-
       case "ban":
       case "banir":
       case "kick":
         if (!(await isAdmin(userJid))) {
           throw new DangerError(
-            "Você não tem permissão para executar este comando!"
+            "¡No tienes permiso para ejecutar este comando!"
           );
         }
 
         if (!args.length && !isReply) {
           throw new InvalidParameterError(
-            "Você precisa mencionar ou marcar um membro!"
+            "¡Necesitas mencionar o marcar un miembro!"
           );
         }
 
@@ -249,106 +160,51 @@ async function runLite({ socket, data }) {
           memberToRemoveNumber.length < 7 ||
           memberToRemoveNumber.length > 15
         ) {
-          throw new InvalidParameterError("Número inválido!");
+          throw new InvalidParameterError("¡Número inválido!");
         }
 
         if (memberToRemoveJid === userJid) {
-          throw new DangerError("Você não pode remover você mesmo!");
+          throw new DangerError("¡No puedes eliminarte a ti mismo!");
         }
 
         const botJid = toUserJid(BOT_NUMBER);
 
         if (memberToRemoveJid === botJid) {
-          throw new DangerError("Você não pode me remover!");
+          throw new DangerError("¡No puedes eliminarme!");
         }
 
-        await ban(from, memberToRemoveJid);
+        let lives = await getUserLives(memberToRemoveJid); // Obtener las vidas del usuario
+        if (lives === null) {
+          lives = 3; // Si el usuario no tiene un contador de vidas, asignamos 3
+        }
+
+        if (lives > 1) {
+          await updateUserLives(memberToRemoveJid, lives - 1); // Reducir una vida
+          await reply(Te has portado mal, te quedan ${lives - 1} vidas. Si pierdes todas, serás eliminado.);
+        } else {
+          await ban(from, memberToRemoveJid); // Eliminar al usuario cuando no queden vidas
+          await updateUserLives(memberToRemoveJid, 0); // Eliminar las vidas
+          await reply("¡Has sido eliminado por agotar tus vidas!");
+        }
 
         await successReact();
-
-        await reply("Membro removido com sucesso!");
         break;
-
-      case "cep":
-        const cep = args[0];
-
-        if (!cep || ![8, 9].includes(cep.length)) {
-          throw new InvalidParameterError(
-            "Você precisa enviar um CEP no formato 00000-000 ou 00000000!"
-          );
-        }
-
-        const data = await consultarCep(cep);
-
-        if (!data.cep) {
-          await warningReply("CEP não encontrado!");
-          return;
-        }
-
-        await successReply(`*Resultado*
-        
-*CEP*: ${data.cep}
-*Logradouro*: ${data.logradouro}
-*Complemento*: ${data.complemento}
-*Bairro*: ${data.bairro}
-*Localidade*: ${data.localidade}
-*UF*: ${data.uf}
-*IBGE*: ${data.ibge}`);
-        break;
-
-      case "ravito":  // Comando cambiado a .ravito
-        const text = args[0];
-
-        if (!text) {
-          throw new InvalidParameterError(
-            "¡Necesitas decirme qué debo responder!"
-          );
-        }
-
-        await waitReact();
-
-        const responseText = await gpt4(text);  // Respuesta de GPT
-
-        await successReply(responseText);
-        break;
-
-      case "somosfme":
-      case "tagall":
-      case "marcar":
-        const { participants } = await lite.groupMetadata(from);
-
-        const mentions = participants.map(({ id }) => id);
-
-        await react("📢");
-
-        await sendText(`📢 Marcando todos!\n\n${fullArgs}`, mentions);
-        break;
-
-      case "menu":
-        await successReact();
-        await imageFromFile(
-          path.join(ASSETS_DIR, "images", "menu.png"),
-          `\n\n${menu()}`
-        );
-        break;
+      
+      // Otros casos de comandos...
     }
+
   } catch (error) {
     if (error instanceof InvalidParameterError) {
-      await warningReply(`¡Parámetros inválidos! ${error.message}`);
+      await warningReply(¡Parámetros inválidos! ${error.message});
     } else if (error instanceof WarningError) {
       await warningReply(error.message);
     } else if (error instanceof DangerError) {
       await errorReply(error.message);
     } else {
-      errorLog(`Error al ejecutar el comando: ${error.message}`);
-
+      errorLog(Error al ejecutar comando!\n\nDetalles: ${error.message});
       await errorReply(
-        `Ocurrió un error al ejecutar el comando ${command.name}!
-
-📄 *Detalles*: ${error.message}`
+        Ocurrió un error al ejecutar el comando ${command.name}!\n\n📄 Detalles: ${error.message}
       );
     }
   }
 }
-
-module.exports = { runLite };
