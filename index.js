@@ -1,9 +1,10 @@
 /**
  * Este script es responsable
  * de las funciones que
- * se ejecutarán en el Lite Bot.
+ * serán ejecutadas
+ * en el Lite Bot.
  *
- * Aquí es donde defines
+ * Aquí es donde vas a definir
  * lo que tu bot hará.
  *
  * @author Dev Gui
@@ -51,8 +52,6 @@ const {
   deactivateWelcomeGroup,
   activateGroup,
   deactivateGroup,
-  getUserLives,  // Nueva función para obtener vidas
-  updateUserLives  // Nueva función para actualizar vidas
 } = require("./database/db");
 
 async function runLite({ socket, data }) {
@@ -110,6 +109,17 @@ async function runLite({ socket, data }) {
   }
 
   if (!checkPrefix(prefix)) {
+    /**
+     * ⏩ Un auto-responder simple ⏪
+     *
+     * Si el mensaje incluye la palabra
+     * (ignora mayúsculas y minúsculas) usa:
+     * body.toLowerCase().includes("palabra")
+     *
+     * Si el mensaje es exactamente igual a
+     * la palabra (ignora mayúsculas y minúsculas) usa:
+     * body.toLowerCase() === "palabra"
+     */
     if (body.toLowerCase().includes("gado")) {
       await reply("¡Eres el gadón guerrero!");
       return;
@@ -121,6 +131,9 @@ async function runLite({ socket, data }) {
     }
   }
 
+  /**
+   * 🚫 Anti-link 🔗
+   */
   if (
     !checkPrefix(prefix) &&
     isActiveAntiLinkGroup(from) &&
@@ -128,7 +141,8 @@ async function runLite({ socket, data }) {
     !(await isAdmin(userJid))
   ) {
     await ban(from, userJid);
-    await reply("¡Anti-link activado! ¡Fuiste removido por enviar un link!");
+    await reply("¡Anti-link activado! ¡Has sido removido por enviar un link!");
+
     return;
   }
 
@@ -137,7 +151,78 @@ async function runLite({ socket, data }) {
   }
 
   try {
+    /**
+     * Aquí defines
+     * las funciones que
+     * el bot ejecutará a través de "cases".
+     *
+     * ⚠ ATENCIÓN ⚠: No traigas funciones
+     * o "cases" de
+     * otros bots a este código
+     * sin saber lo que estás haciendo.
+     *
+     * Cada bot tiene sus
+     * particularidades y,
+     * por lo tanto, es importante
+     * tener cuidado.
+     * No nos hacemos responsables
+     * por problemas
+     * derivados de intentar adaptar
+     * códigos de otros bots.
+     *
+     * Toda ayuda será *COBRADA*
+     * si tu intención
+     * es adaptar códigos
+     * de otros bots a este.
+     *
+     * ✅ CASES ✅
+     */
     switch (removeAccentsAndSpecialCharacters(command?.toLowerCase())) {
+      case "antilink":
+        if (!args.length) {
+          throw new InvalidParameterError(
+            "¡Necesitas escribir 1 o 0 (activar o desactivar)!"
+          );
+        }
+
+        const antiLinkOn = args[0] === "1";
+        const antiLinkOff = args[0] === "0";
+
+        if (!antiLinkOn && !antiLinkOff) {
+          throw new InvalidParameterError(
+            "¡Necesitas escribir 1 o 0 (activar o desactivar)!"
+          );
+        }
+
+        if (antiLinkOn) {
+          activateAntiLinkGroup(from);
+        } else {
+          deactivateAntiLinkGroup(from);
+        }
+
+        await successReact();
+
+        const antiLinkContext = antiLinkOn ? "activado" : "desactivado";
+
+        await reply(`¡Anti-link ${antiLinkContext} con éxito!`);
+        break;
+
+      case "attp":
+        if (!args.length) {
+          throw new InvalidParameterError(
+            "¡Necesitas decirme qué texto quieres convertir en sticker!"
+          );
+        }
+
+        await waitReact();
+
+        const url = await attp(args[0].trim());
+
+        await successReact();
+
+        await stickerFromURL(url);
+        break;
+
       case "ban":
       case "banir":
       case "kick":
@@ -149,7 +234,7 @@ async function runLite({ socket, data }) {
 
         if (!args.length && !isReply) {
           throw new InvalidParameterError(
-            "¡Necesitas mencionar o marcar un miembro!"
+            "¡Necesitas mencionar o marcar a un miembro!"
           );
         }
 
@@ -173,26 +258,76 @@ async function runLite({ socket, data }) {
           throw new DangerError("¡No puedes eliminarme!");
         }
 
-        let lives = await getUserLives(memberToRemoveJid); // Obtener las vidas del usuario
-        if (lives === null) {
-          lives = 3; // Si el usuario no tiene un contador de vidas, asignamos 3
-        }
-
-        if (lives > 1) {
-          await updateUserLives(memberToRemoveJid, lives - 1); // Reducir una vida
-          await reply(`Te has portado mal, te quedan ${lives - 1} vidas. Si pierdes todas, serás eliminado.`);
-        } else {
-          await ban(from, memberToRemoveJid); // Eliminar al usuario cuando no queden vidas
-          await updateUserLives(memberToRemoveJid, 0); // Eliminar las vidas
-          await reply("¡Has sido eliminado por agotar tus vidas!");
-        }
+        await ban(from, memberToRemoveJid);
 
         await successReact();
-        break;
-      
-      // Otros casos de comandos...
-    }
 
+        await reply("¡Miembro removido con éxito!");
+        break;
+
+      case "cep":
+        const cep = args[0];
+
+        if (!cep || ![8, 9].includes(cep.length)) {
+          throw new InvalidParameterError(
+            "¡Necesitas enviar un CEP en el formato 00000-000 o 00000000!"
+          );
+        }
+
+        const data = await consultarCep(cep);
+
+        if (!data.cep) {
+          await warningReply("¡CEP no encontrado!");
+          return;
+        }
+
+        await successReply(`*Resultado*
+        
+*CEP*: ${data.cep}
+*Logradouro*: ${data.logradouro}
+*Complemento*: ${data.complemento}
+*Bairro*: ${data.bairro}
+*Localidade*: ${data.localidade}
+*UF*: ${data.uf}
+*IBGE*: ${data.ibge}`);
+        break;
+
+      case "ravito":  // Comando cambiado a .ravito
+        const text = args[0];
+
+        if (!text) {
+          throw new InvalidParameterError(
+            "¡Necesitas decirme qué debo responder!"
+          );
+        }
+
+        await waitReact();
+
+        const responseText = await gpt4(text);  // Respuesta de GPT
+
+        await successReply(responseText);
+        break;
+
+      case "somosultra":
+      case "tagall":
+      case "marcar":
+        const { participants } = await lite.groupMetadata(from);
+
+        const mentions = participants.map(({ id }) => id);
+
+        await react("📢");
+
+        await sendText(`¡Hola, hola! Mis Cracks🐾\n ¡Marcando a todos!🤖\n\n${fullArgs}`, mentions);
+        break;
+
+      case "menu":
+        await successReact();
+        await imageFromFile(
+          path.join(ASSETS_DIR, "images", "menu.png"),
+          `\n\n${menu()}`
+        );
+        break;
+    }
   } catch (error) {
     if (error instanceof InvalidParameterError) {
       await warningReply(`¡Parámetros inválidos! ${error.message}`);
@@ -201,10 +336,15 @@ async function runLite({ socket, data }) {
     } else if (error instanceof DangerError) {
       await errorReply(error.message);
     } else {
-      errorLog(`Error al ejecutar comando!\n\nDetalles: ${error.message}`);
+      errorLog(`Error al ejecutar el comando: ${error.message}`);
+
       await errorReply(
-        `Ocurrió un error al ejecutar el comando ${command.name}!\n\n📄 Detalles: ${error.message}`
+        `¡Hubo un error al ejecutar el comando ${command.name}!
+
+📄 *Detalles*: ${error.message}`
       );
     }
   }
 }
+
+module.exports = { runLite };
