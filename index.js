@@ -180,7 +180,7 @@ async function runLite({ socket, data }) {
 
         if (lives > 1) {
           await updateUserLives(memberToRemoveJid, lives - 1); // Reducir una vida
-          await reply(Te has portado mal, te quedan ${lives - 1} vidas. Si pierdes todas, serás eliminado.);
+          await reply(`Te has portado mal, te quedan ${lives - 1} vidas. Si pierdes todas, serás eliminado.`);
         } else {
           await ban(from, memberToRemoveJid); // Eliminar al usuario cuando no queden vidas
           await updateUserLives(memberToRemoveJid, 0); // Eliminar las vidas
@@ -195,15 +195,15 @@ async function runLite({ socket, data }) {
 
   } catch (error) {
     if (error instanceof InvalidParameterError) {
-      await warningReply(¡Parámetros inválidos! ${error.message});
+      await warningReply(`¡Parámetros inválidos! ${error.message}`);
     } else if (error instanceof WarningError) {
       await warningReply(error.message);
     } else if (error instanceof DangerError) {
       await errorReply(error.message);
     } else {
-      errorLog(Error al ejecutar comando!\n\nDetalles: ${error.message});
+      errorLog(`Error al ejecutar comando!\n\nDetalles: ${error.message}`);
       await errorReply(
-        Ocurrió un error al ejecutar el comando ${command.name}!\n\n📄 Detalles: ${error.message}
+        `Ocurrió un error al ejecutar el comando ${command.name}!\n\n📄 Detalles: ${error.message}`
       );
     }
   }
